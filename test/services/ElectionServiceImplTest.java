@@ -5,10 +5,15 @@ import data.repositories.CandidateRepository;
 import data.repositories.VoteRepository;
 import data.repositories.VoterRepository;
 import dtos.requests.CandidateRegistrationRequest;
+import dtos.requests.VoteRequest;
 import dtos.requests.VoterRegistrationRequest;
+import dtos.responses.CandidateResponse;
+import dtos.responses.ElectionResultResponse;
 import dtos.responses.VoterResponse;
 import exceptions.CandidateAlreadyExistsException;
 import exceptions.DuplicateVoterException;
+import exceptions.InvalidVoteException;
+import exceptions.VoteAlreadyCastException;
 import exceptions.VoterNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -139,5 +144,52 @@ public class ElectionServiceImplTest {
         electionService.registerCandidate(presidentRequest);
         electionService.registerCandidate(secretaryRequest);
         assertEquals(2L, candidateRepository.count());
+    }
+    @Test
+    public void castVote_successTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        assertEquals(0L, voteRepository.count());
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+
+        electionService.castVote(voteRequest);
+        assertEquals(1L, voteRepository.count());
+    }
+
+    @Test
+    public void castVoteTwiceForSamePosition_throwsVoteAlreadyCastExceptionTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+
+        electionService.castVote(voteRequest);
+        assertThrows(VoteAlreadyCastException.class, () -> electionService.castVote(voteRequest));
+        assertEquals(1L, voteRepository.count());
+    }
+
+    @Test
+    public void getResults_noVotesCast_returnsNoVotesCastYetTest() {
+        ElectionResultResponse result = electionService.getResults(Position.PRESIDENT);
+        assertEquals(0, result.getTotalVotesCast());
+        assertEquals("No votes cast yet", result.getWinnerName());
     }
 }

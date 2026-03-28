@@ -2,10 +2,19 @@ package utils;
 
 import data.models.Candidate;
 import data.models.Voter;
+import data.models.Position;
+import data.models.Vote;
 import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.VoterRegistrationRequest;
 import dtos.responses.CandidateResponse;
+import dtos.responses.ElectionResultResponse;
+import dtos.responses.VoteResponse;
 import dtos.responses.VoterResponse;
+import lombok.NonNull;
+
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class Mapper {
 
@@ -47,4 +56,51 @@ public class Mapper {
         response.setNominatedAt(candidate.getNominatedAt());
         return response;
     }
+    public static VoteResponse mapToVoteResponse(Vote vote, Candidate candidate) {
+        VoteResponse response = new VoteResponse();
+        response.setId(vote.getId());
+        response.setVoterId(vote.getVoterId());
+        response.setCandidateId(vote.getCandidateId());
+        response.setPosition(vote.getPosition());
+        response.setTimestamp(vote.getTimestamp());
+        response.setMessage("vote for " + candidate.getFullName() +
+                " (" + vote.getPosition() + ") recorded");
+        return response;
+    }
+
+    public static ElectionResultResponse mapToElectionResult(
+            Position position, List<Vote> votes, List<Candidate> candidates) {
+
+        List<ElectionResultResponse.CandidateResult> breakdown = new ArrayList<>();
+        for (Candidate candidate : candidates) {
+            int count = 0;
+            for (Vote vote : votes) {
+                if (vote.getCandidateId().equals(candidate.getId())) count++;
+            }
+            ElectionResultResponse.CandidateResult result = new ElectionResultResponse.CandidateResult();
+            result.setCandidateId(candidate.getId());
+            result.setCandidateName(candidate.getFullName());
+            result.setVoteCount((long) count);
+            breakdown.add(result);
+        }
+
+        breakdown.sort((a, b) -> Long.compare(b.getVoteCount(), a.getVoteCount()));
+
+        ElectionResultResponse response = getElectionResultResponse(position, votes, breakdown);
+        return response;
+    }
+
+    private static @NonNull ElectionResultResponse getElectionResultResponse(Position position, List<Vote> votes, List<ElectionResultResponse.CandidateResult> breakdown) {
+        ElectionResultResponse.CandidateResult winner = breakdown.isEmpty() ? null : breakdown.get(0);
+
+        ElectionResultResponse response = new ElectionResultResponse();
+        response.setPosition(position);
+        response.setTotalVotesCast(votes.size());
+        response.setWinnerId(winner != null ? winner.getCandidateId() : null);
+        response.setWinnerName(winner != null ? winner.getCandidateName() : "No votes cast yet");
+        response.setWinnerVoteCount(winner != null ? winner.getVoteCount() : 0L);
+        response.setBreakdown(breakdown);
+        return response;
+    }
+
 }

@@ -3,6 +3,7 @@ package repositories;
 import data.models.Candidate;
 import data.models.Position;
 import data.models.Voter;
+import data.models.Vote;
 import data.repositories.CandidateRepository;
 import data.repositories.VoteRepository;
 import data.repositories.VoterRepository;
@@ -129,4 +130,54 @@ public class ElectionRepositoryTest {
         List<Candidate> presidents = candidateRepository.findAllByPosition(Position.PRESIDENT);
         assertEquals(2, presidents.size());
     }
+    @Test
+    public void newVoteRepository_countIsZeroTest() {
+        assertEquals(0L, voteRepository.count());
+    }
+
+    @Test
+    public void saveVote_countIsOneTest() {
+        Vote vote = new Vote();
+        vote.setVoterId("voter-001");
+        vote.setCandidateId("candidate-001");
+        vote.setPosition(Position.PRESIDENT);
+        voteRepository.save(vote);
+        assertEquals(1L, voteRepository.count());
+    }
+
+    @Test
+    public void saveVote_existsByVoterIdAndPosition_returnsTrueTest() {
+        Vote vote = new Vote();
+        vote.setVoterId("voter-001");
+        vote.setCandidateId("candidate-001");
+        vote.setPosition(Position.PRESIDENT);
+        voteRepository.save(vote);
+
+        assertTrue(voteRepository.existsByVoterIdAndPosition("voter-001", Position.PRESIDENT));
+    }
+
+    @Test
+    public void noVoteSaved_existsByVoterIdAndPosition_returnsFalseTest() {
+        assertFalse(voteRepository.existsByVoterIdAndPosition("voter-001", Position.PRESIDENT));
+    }
+
+    @Test
+    public void saveTwoVotes_findAllByPosition_returnsBothTest() {
+        Vote vote1 = new Vote();
+        vote1.setVoterId("voter-001");
+        vote1.setCandidateId("candidate-001");
+        vote1.setPosition(Position.PRESIDENT);
+        voteRepository.save(vote1);
+
+        Vote vote2 = new Vote();
+        vote2.setVoterId("voter-002");
+        vote2.setCandidateId("candidate-001");
+        vote2.setPosition(Position.PRESIDENT);
+        voteRepository.save(vote2);
+
+        List<Vote> votes = voteRepository.findAllByPosition(Position.PRESIDENT);
+        assertEquals(2, votes.size());
+    }
+
+
 }

@@ -12,4 +12,6 @@ import dtos.responses.VoterResponse;
 public interface ElectionService {
     VoterResponse registerVoter(VoterRegistrationRequest request);
     CandidateResponse registerCandidate(CandidateRegistrationRequest request);
+    VoteResponse castVote(VoteRequest request);
+    ElectionResultResponse getResults(Position position);
 }
