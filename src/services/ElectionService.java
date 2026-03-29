@@ -6,6 +6,8 @@ import dtos.requests.VoteRequest;
 import dtos.requests.VoterRegistrationRequest;
 import dtos.responses.CandidateResponse;
 import dtos.responses.ElectionResultResponse;
+import dtos.responses.LoginResponse;
+import dtos.responses.LogoutResponse;
 import dtos.responses.VoteResponse;
 import dtos.responses.VoterResponse;
 
@@ -14,4 +16,6 @@ public interface ElectionService {
     CandidateResponse registerCandidate(CandidateRegistrationRequest request);
     VoteResponse castVote(VoteRequest request);
     ElectionResultResponse getResults(Position position);
+    LoginResponse login(String email, String password);
+    LogoutResponse logout(String email);
 }

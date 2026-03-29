@@ -17,12 +17,13 @@ public class Voter {
     private String id;
     private String firstName;
     private String lastName;
-    @Indexed (unique=true)
+    @Indexed(unique = true)
     private String email;
-    @Indexed (unique=true)
+    @Indexed(unique = true)
     private String matricNumber;
+    private String password;
+    private boolean loggedIn;
     private Set<Position> votedPositions = new HashSet<>();
     @CreatedDate
     private LocalDateTime registeredAt;
-
 }

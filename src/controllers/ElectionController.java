@@ -5,16 +5,12 @@ import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.VoteRequest;
 import dtos.requests.VoterRegistrationRequest;
 import exceptions.ElectionException;
+import org.springframework.web.bind.annotation.*;
 import services.ElectionService;
 import dtos.responses.ApiResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class ElectionController {
@@ -56,5 +52,21 @@ public class ElectionController {
             return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }
+    @PatchMapping("/voter/login/{email}/{password}")
+    public ResponseEntity<?> login(@PathVariable String email, @PathVariable String password) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.login(email, password)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
 
+    @PatchMapping("/voter/logout/{email}")
+    public ResponseEntity<?> logout(@PathVariable String email) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.logout(email)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
 }

@@ -10,11 +10,9 @@ import dtos.requests.VoterRegistrationRequest;
 import dtos.responses.CandidateResponse;
 import dtos.responses.ElectionResultResponse;
 import dtos.responses.VoterResponse;
-import exceptions.CandidateAlreadyExistsException;
-import exceptions.DuplicateVoterException;
-import exceptions.InvalidVoteException;
-import exceptions.VoteAlreadyCastException;
-import exceptions.VoterNotFoundException;
+import exceptions.InvalidLoginDetailsException;
+import exceptions.VoterNotLoggedInException;
+import exceptions.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +25,6 @@ public class ElectionServiceImplTest {
 
     @Autowired
     private ElectionService electionService;
-
     @Autowired
     private VoterRepository voterRepository;
 
@@ -51,12 +48,14 @@ public class ElectionServiceImplTest {
         voterRequest.setLastName("Ibrahim");
         voterRequest.setEmail("sadiq@moniepoint.edu");
         voterRequest.setMatricNumber("CSC/21/0001");
+        voterRequest.setPassword("password123");
 
         voterRequest2 = new VoterRegistrationRequest();
         voterRequest2.setFirstName("Aliyu");
         voterRequest2.setLastName("Usman");
-        voterRequest2.setEmail("Aliyu@moniepoint.edu");
+        voterRequest2.setEmail("aliyu@moniepoint.edu");
         voterRequest2.setMatricNumber("CSC/21/0002");
+        voterRequest2.setPassword("password456");
     }
     @Test
     public void registerVoter_successTest() {
@@ -191,5 +190,75 @@ public class ElectionServiceImplTest {
         ElectionResultResponse result = electionService.getResults(Position.PRESIDENT);
         assertEquals(0, result.getTotalVotesCast());
         assertEquals("No votes cast yet", result.getWinnerName());
+    }
+    
+    @Test
+    public void registerVoter_loginVoter_voterIsLoggedInTest() {
+        electionService.registerVoter(voterRequest);
+        electionService.login("sadiq@moniepoint.edu", "password123");
+        assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+    }
+
+    @Test
+    public void loginUnregisteredVoter_throwsInvalidLoginDetailsExceptionTest() {
+        assertThrows(InvalidLoginDetailsException.class,
+                () -> electionService.login("unknown@moniepoint.edu", "password123"));
+    }
+
+    @Test
+    public void loginWithWrongPassword_throwsInvalidLoginDetailsExceptionTest() {
+        electionService.registerVoter(voterRequest);
+        assertThrows(InvalidLoginDetailsException.class,
+                () -> electionService.login("sadiq@moniepoint.edu", "wrongpassword"));
+        assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+    }
+
+    @Test
+    public void loginWithWrongPassword_voterRemainsLoggedOutTest() {
+        electionService.registerVoter(voterRequest);
+        assertThrows(InvalidLoginDetailsException.class,
+                () -> electionService.login("sadiq@moniepoint.edu", "wrongpassword"));
+        assertEquals(1L, voterRepository.count());
+        assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+    }
+
+    @Test
+    public void loginTwoVoters_bothAreLoggedInTest() {
+        electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest2);
+        electionService.login("sadiq@moniepoint.edu", "password123");
+        electionService.login("aliyu@moniepoint.edu", "password456");
+        assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+        assertTrue(voterRepository.findByEmail("aliyu@moniepoint.edu").get().isLoggedIn());
+    }
+
+    @Test
+    public void registerVoter_loginVoter_logoutVoter_voterIsLoggedOutTest() {
+        electionService.registerVoter(voterRequest);
+        electionService.login("sadiq@moniepoint.edu", "password123");
+        assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+        electionService.logout("sadiq@moniepoint.edu");
+        assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+    }
+
+    @Test
+    public void logoutUnregisteredVoter_throwsInvalidLoginDetailsExceptionTest() {
+        assertThrows(InvalidLoginDetailsException.class, () -> electionService.logout("unknown@moniepoint.edu"));
+    }
+
+    @Test
+    public void logoutVoterWhoIsNotLoggedIn_throwsVoterNotLoggedInExceptionTest() {
+        electionService.registerVoter(voterRequest);
+        assertThrows(VoterNotLoggedInException.class, () -> electionService.logout("sadiq@moniepoint.edu"));
+    }
+
+    @Test
+    public void loginVoter_logoutVoter_loginAgain_voterIsLoggedInTest() {
+        electionService.registerVoter(voterRequest);
+        electionService.login("sadiq@moniepoint.edu", "password123");
+        electionService.logout("sadiq@moniepoint.edu");
+        assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+        electionService.login("sadiq@moniepoint.edu", "password123");
+        assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
     }
 }

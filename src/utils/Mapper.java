@@ -6,10 +6,7 @@ import data.models.Position;
 import data.models.Vote;
 import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.VoterRegistrationRequest;
-import dtos.responses.CandidateResponse;
-import dtos.responses.ElectionResultResponse;
-import dtos.responses.VoteResponse;
-import dtos.responses.VoterResponse;
+import dtos.responses.*;
 import lombok.NonNull;
 
 import java.util.ArrayList;
@@ -24,6 +21,7 @@ public class Mapper {
         voter.setLastName(request.getLastName());
         voter.setEmail(request.getEmail());
         voter.setMatricNumber(request.getMatricNumber());
+        voter.setPassword(request.getPassword());
         return voter;
     }
 
@@ -102,5 +100,19 @@ public class Mapper {
         response.setBreakdown(breakdown);
         return response;
     }
+    public static LoginResponse mapToLoginResponse(Voter voter) {
+        LoginResponse response = new LoginResponse();
+        response.setId(voter.getId());
+        response.setEmail(voter.getEmail());
+        response.setLoggedIn(voter.isLoggedIn());
+        return response;
+    }
 
+    public static LogoutResponse mapToLogoutResponse(Voter voter) {
+        LogoutResponse response = new LogoutResponse();
+        response.setEmail(voter.getEmail());
+        response.setLoggedIn(voter.isLoggedIn());
+        response.setMessage("Goodbye " + voter.getFirstName() + ". You have been logged out.");
+        return response;
+    }
 }

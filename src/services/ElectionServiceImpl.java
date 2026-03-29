@@ -10,16 +10,8 @@ import data.repositories.VoteRepository;
 import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.VoterRegistrationRequest;
 import dtos.requests.VoteRequest;
-import dtos.responses.CandidateResponse;
-import dtos.responses.ElectionResultResponse;
-import dtos.responses.VoteResponse;
-import dtos.responses.VoterResponse;
-import exceptions.CandidateAlreadyExistsException;
-import exceptions.CandidateNotFoundException;
-import exceptions.DuplicateVoterException;
-import exceptions.InvalidVoteException;
-import exceptions.VoteAlreadyCastException;
-import exceptions.VoterNotFoundException;
+import dtos.responses.*;
+import exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -102,6 +94,31 @@ public class ElectionServiceImpl implements ElectionService {
         List<Candidate> candidates = candidateRepository.findAllByPosition(position);
         List<Vote> votes = voteRepository.findAllByPosition(position);
         return mapToElectionResult(position, votes, candidates);
+    }
+    @Override
+    public LoginResponse login(String email, String password) {
+        Optional<Voter> optionalVoter = voterRepository.findByEmail(email);
+        if (optionalVoter.isEmpty())
+            throw new InvalidLoginDetailsException("Voter with email " + email + " does not exist.");
+        Voter voter = optionalVoter.get();
+        if (!voter.getPassword().equals(password))
+            throw new InvalidLoginDetailsException("Invalid password. Please try again.");
+        voter.setLoggedIn(true);
+        Voter savedVoter = voterRepository.save(voter);
+        return mapToLoginResponse(savedVoter);
+    }
+
+    @Override
+    public LogoutResponse logout(String email) {
+        Optional<Voter> optionalVoter = voterRepository.findByEmail(email);
+        if (optionalVoter.isEmpty())
+            throw new InvalidLoginDetailsException("Voter with email " + email + " does not exist.");
+        Voter voter = optionalVoter.get();
+        if (!voter.isLoggedIn())
+            throw new VoterNotLoggedInException(voter.getFirstName() + " is not currently logged in.");
+        voter.setLoggedIn(false);
+        Voter savedVoter = voterRepository.save(voter);
+        return mapToLogoutResponse(savedVoter);
     }
 
 
