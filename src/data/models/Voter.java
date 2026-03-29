@@ -1,6 +1,7 @@
 package data.models;
 
 import lombok.Data;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -21,6 +22,7 @@ public class Voter {
     @Indexed (unique=true)
     private String matricNumber;
     private Set<Position> votedPositions = new HashSet<>();
+    @CreatedDate
     private LocalDateTime registeredAt;
 
 }

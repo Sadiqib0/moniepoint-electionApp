@@ -1,6 +1,7 @@
 package data.models;
 
 import lombok.Data;
+import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -16,5 +17,6 @@ public class Candidate {
     private String voterId;
     private Position position;
     private String fullName;
+    @CreatedDate
     private LocalDateTime nominatedAt;
 }
