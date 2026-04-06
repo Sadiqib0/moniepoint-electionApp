@@ -14,10 +14,10 @@ import dtos.responses.*;
 import exceptions.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
+import utils.Mapper;
 import java.util.List;
 import java.util.Optional;
-
+import java.util.stream.Collectors;
 import static utils.Mapper.*;
 
 @Service
@@ -65,6 +65,10 @@ public class ElectionServiceImpl implements ElectionService {
             throw new VoterNotFoundException("Voter with ID " + request.getVoterId() + " not found.");
 
         Voter voter = optionalVoter.get();
+
+        if (!voter.isLoggedIn())
+            throw new VoterNotLoggedInException(voter.getFirstName() + " " + voter.getLastName() + " must be logged in to cast a vote.");
+
         Optional<Candidate> optionalCandidate = candidateRepository.findById(request.getCandidateId());
 
         if (optionalCandidate.isEmpty())
@@ -121,5 +125,28 @@ public class ElectionServiceImpl implements ElectionService {
         return mapToLogoutResponse(savedVoter);
     }
 
+    @Override
+    public VoterResponse getVoter(String id) {
+        Optional<Voter> optionalVoter = voterRepository.findById(id);
+        if (optionalVoter.isEmpty())
+            throw new VoterNotFoundException("Voter with ID " + id + " not found.");
+        return map(optionalVoter.get());
+    }
+
+    @Override
+    public List<VoterResponse> getAllVoters() {
+        return voterRepository.findAll()
+                .stream()
+                .map(Mapper::map)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public List<CandidateResponse> getAllCandidates(Position position) {
+        return candidateRepository.findAllByPosition(position)
+                .stream()
+                .map(Mapper::map)
+                .collect(Collectors.toList());
+    }
 
 }

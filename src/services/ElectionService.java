@@ -11,6 +11,8 @@ import dtos.responses.LogoutResponse;
 import dtos.responses.VoteResponse;
 import dtos.responses.VoterResponse;
 
+import java.util.List;
+
 public interface ElectionService {
     VoterResponse registerVoter(VoterRegistrationRequest request);
     CandidateResponse registerCandidate(CandidateRegistrationRequest request);
@@ -18,4 +20,7 @@ public interface ElectionService {
     ElectionResultResponse getResults(Position position);
     LoginResponse login(String email, String password);
     LogoutResponse logout(String email);
+    VoterResponse getVoter(String id);
+    List<VoterResponse> getAllVoters();
+    List<CandidateResponse> getAllCandidates(Position position);
 }

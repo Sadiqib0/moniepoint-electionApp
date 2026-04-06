@@ -69,4 +69,30 @@ public class ElectionController {
             return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }
+    @GetMapping("/voter/{id}")
+    public ResponseEntity<?> getVoter(@PathVariable String id) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.getVoter(id)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/voters")
+    public ResponseEntity<?> getAllVoters() {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.getAllVoters()), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/candidates/{position}")
+    public ResponseEntity<?> getAllCandidates(@PathVariable Position position) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.getAllCandidates(position)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
 }

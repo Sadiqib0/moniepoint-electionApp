@@ -18,6 +18,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @SpringBootTest(classes = app.Main.class)
@@ -92,6 +94,7 @@ public class ElectionServiceImplTest {
         assertEquals(1L, voterRepository.count());
     }
 
+
     @Test
     public void registerCandidate_successTest() {
         VoterResponse voter = electionService.registerVoter(voterRequest);
@@ -127,6 +130,44 @@ public class ElectionServiceImplTest {
         assertThrows(CandidateAlreadyExistsException.class, () -> electionService.registerCandidate(candidateRequest));
         assertEquals(1L, candidateRepository.count());
     }
+    @Test
+    public void getAllCandidates_noRegisteredCandidates_emptyListTest() {
+        List<CandidateResponse> candidates = electionService.getAllCandidates(Position.PRESIDENT);
+        assertEquals(0, candidates.size());
+    }
+
+    @Test
+    public void registerTwoCandidatesForPresident_getAllCandidates_returnsTwoTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest request1 = new CandidateRegistrationRequest();
+        request1.setVoterId(voter1.getId());
+        request1.setPosition(Position.PRESIDENT);
+
+        CandidateRegistrationRequest request2 = new CandidateRegistrationRequest();
+        request2.setVoterId(voter2.getId());
+        request2.setPosition(Position.PRESIDENT);
+
+        electionService.registerCandidate(request1);
+        electionService.registerCandidate(request2);
+
+        List<CandidateResponse> candidates = electionService.getAllCandidates(Position.PRESIDENT);
+        assertEquals(2, candidates.size());
+    }
+
+    @Test
+    public void registerCandidateForPresident_getAllCandidatesForVP_emptyListTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+
+        CandidateRegistrationRequest request = new CandidateRegistrationRequest();
+        request.setVoterId(voter1.getId());
+        request.setPosition(Position.PRESIDENT);
+        electionService.registerCandidate(request);
+
+        List<CandidateResponse> candidates = electionService.getAllCandidates(Position.VICE_PRESIDENT);
+        assertEquals(0, candidates.size());
+    }
 
     @Test
     public void registerSameVoterForDifferentPositions_successTest() {
@@ -145,6 +186,19 @@ public class ElectionServiceImplTest {
         assertEquals(2L, candidateRepository.count());
     }
     @Test
+    public void getAllVoters_emptyList_countIsZeroTest() {
+        List<VoterResponse> voters = electionService.getAllVoters();
+        assertEquals(0, voters.size());
+    }
+
+    @Test
+    public void registerTwoVoters_getAllVoters_returnsTwoTest() {
+        electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest2);
+        List<VoterResponse> voters = electionService.getAllVoters();
+        assertEquals(2, voters.size());
+    }
+    @Test
     public void castVote_successTest() {
         VoterResponse voter1 = electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
@@ -155,6 +209,8 @@ public class ElectionServiceImplTest {
         CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
 
         assertEquals(0L, voteRepository.count());
+
+        electionService.login("aliyu@moniepoint.edu", "password456");
 
         VoteRequest voteRequest = new VoteRequest();
         voteRequest.setVoterId(voter2.getId());
@@ -175,6 +231,8 @@ public class ElectionServiceImplTest {
         candidateRequest.setPosition(Position.PRESIDENT);
         CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
 
+        electionService.login("aliyu@moniepoint.edu", "password456");
+
         VoteRequest voteRequest = new VoteRequest();
         voteRequest.setVoterId(voter2.getId());
         voteRequest.setCandidateId(candidate.getId());
@@ -184,6 +242,60 @@ public class ElectionServiceImplTest {
         assertThrows(VoteAlreadyCastException.class, () -> electionService.castVote(voteRequest));
         assertEquals(1L, voteRepository.count());
     }
+
+    @Test
+    public void castVoteWithoutLogin_throwsVoterNotLoggedInExceptionTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+
+        assertThrows(VoterNotLoggedInException.class, () -> electionService.castVote(voteRequest));
+        assertEquals(0L, voteRepository.count());
+    }
+
+    @Test
+    public void loginThenCastVote_successTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        electionService.login("aliyu@moniepoint.edu", "password456");
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+
+        electionService.castVote(voteRequest);
+        assertEquals(1L, voteRepository.count());
+    }
+    @Test
+    public void getVoter_successTest() {
+        VoterResponse saved = electionService.registerVoter(voterRequest);
+        VoterResponse found = electionService.getVoter(saved.getId());
+        assertEquals(saved.getId(), found.getId());
+        assertEquals("sadiq@moniepoint.edu", found.getEmail());
+    }
+
+    @Test
+    public void getVoterWithUnknownId_throwsVoterNotFoundExceptionTest() {
+        assertThrows(VoterNotFoundException.class,
+                () -> electionService.getVoter("unknown-id"));
+    }
+
 
     @Test
     public void getResults_noVotesCast_returnsNoVotesCastYetTest() {
