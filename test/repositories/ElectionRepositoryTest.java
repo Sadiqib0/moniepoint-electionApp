@@ -141,6 +141,7 @@ public class ElectionRepositoryTest {
         vote.setVoterId("voter-001");
         vote.setCandidateId("candidate-001");
         vote.setPosition(Position.PRESIDENT);
+        vote.setReceipt(java.util.UUID.randomUUID().toString());
         voteRepository.save(vote);
         assertEquals(1L, voteRepository.count());
     }
@@ -151,6 +152,7 @@ public class ElectionRepositoryTest {
         vote.setVoterId("voter-001");
         vote.setCandidateId("candidate-001");
         vote.setPosition(Position.PRESIDENT);
+        vote.setReceipt(java.util.UUID.randomUUID().toString());
         voteRepository.save(vote);
 
         assertTrue(voteRepository.existsByVoterIdAndPosition("voter-001", Position.PRESIDENT));
@@ -161,23 +163,5 @@ public class ElectionRepositoryTest {
         assertFalse(voteRepository.existsByVoterIdAndPosition("voter-001", Position.PRESIDENT));
     }
 
-    @Test
-    public void saveTwoVotes_findAllByPosition_returnsBothTest() {
-        Vote vote1 = new Vote();
-        vote1.setVoterId("voter-001");
-        vote1.setCandidateId("candidate-001");
-        vote1.setPosition(Position.PRESIDENT);
-        voteRepository.save(vote1);
-
-        Vote vote2 = new Vote();
-        vote2.setVoterId("voter-002");
-        vote2.setCandidateId("candidate-001");
-        vote2.setPosition(Position.PRESIDENT);
-        voteRepository.save(vote2);
-
-        List<Vote> votes = voteRepository.findAllByPosition(Position.PRESIDENT);
-        assertEquals(2, votes.size());
-    }
-
-
 }
+

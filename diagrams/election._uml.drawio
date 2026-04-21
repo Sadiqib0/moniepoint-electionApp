@@ -1,0 +1,217 @@
+<mxfile host="drawio-plugin" modified="2026-04-21T09:17:04.007Z" agent="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/137.0.0.0 Safari/537.36" version="22.1.22" etag="EF2_b8Nn98xYCfszVNh-" type="embed">
+  <diagram id="VG-rklABgCq9B4-jXicf" name="Page-1">
+    <mxGraphModel dx="2558" dy="552" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="2339" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="2" value="«controller»&#xa;ElectionController" style="swimlane;fontStyle=1;align=center;startSize=40;              fillColor=#ffe6cc;strokeColor=#d6b656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="540" y="40" width="300" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="3" value="- electionService : ElectionService" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="2" vertex="1">
+          <mxGeometry y="40" width="300" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="4" value="" style="line;strokeColor=#d6b656;fillColor=none;" parent="2" vertex="1">
+          <mxGeometry y="64" width="300" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="5" value="+ registerVoter(request) : ResponseEntity&#xa;+ registerCandidate(request) : ResponseEntity&#xa;+ castVote(request) : ResponseEntity&#xa;+ getResults(position) : ResponseEntity" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="2" vertex="1">
+          <mxGeometry y="72" width="300" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="6" value="«interface»&#xa;ElectionService" style="swimlane;fontStyle=3;align=center;startSize=40;              fillColor=#dae8fc;strokeColor=#6c8ebf;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="220" y="290" width="290" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="7" value="" style="line;strokeColor=#6c8ebf;fillColor=none;" parent="6" vertex="1">
+          <mxGeometry y="40" width="290" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="8" value="+ registerVoter(request) : VoterResponse&#xa;+ registerCandidate(request) : CandidateResponse&#xa;+ castVote(request) : VoteResponse&#xa;+ getResults(position) : ElectionResultResponse" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="6" vertex="1">
+          <mxGeometry y="48" width="290" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="10" value="«service»&#xa;ElectionServiceImpl" style="swimlane;fontStyle=1;align=center;startSize=40;              fillColor=#e1d5e7;strokeColor=#9673a6;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="600" y="290" width="310" height="200" as="geometry" />
+        </mxCell>
+        <mxCell id="11" value="- voterRepository : VoterRepository&#xa;- candidateRepository : CandidateRepository&#xa;- voteRepository : VoteRepository" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="10" vertex="1">
+          <mxGeometry y="40" width="310" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="12" value="" style="line;strokeColor=#9673a6;fillColor=none;" parent="10" vertex="1">
+          <mxGeometry y="100" width="310" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="13" value="+ registerVoter(request) : VoterResponse&#xa;+ registerCandidate(request) : CandidateResponse&#xa;+ castVote(request) : VoteResponse&#xa;+ getResults(position) : ElectionResultResponse" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="10" vertex="1">
+          <mxGeometry y="108" width="310" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="14" value="«repository»&#xa;VoterRepository" style="swimlane;fontStyle=3;align=center;startSize=40;              fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="40" y="585" width="290" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="15" value="" style="line;strokeColor=#d6b656;fillColor=none;" parent="14" vertex="1">
+          <mxGeometry y="40" width="290" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="16" value="+ findByEmail(email) : Optional&lt;Voter&gt;&#xa;+ findByMatricNumber(mat) : Optional&lt;Voter&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="14" vertex="1">
+          <mxGeometry y="48" width="290" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="18" value="«repository»&#xa;CandidateRepository" style="swimlane;fontStyle=3;align=center;startSize=40;              fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="390" y="585" width="310" height="118" as="geometry" />
+        </mxCell>
+        <mxCell id="19" value="" style="line;strokeColor=#d6b656;fillColor=none;" parent="18" vertex="1">
+          <mxGeometry y="40" width="310" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="20" value="+ findByVoterId(id) : Optional&lt;Candidate&gt;&#xa;+ findByPosition(pos) : List&lt;Candidate&gt;&#xa;+ existsByVoterIdAndPosition(id, pos) : boolean" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="18" vertex="1">
+          <mxGeometry y="48" width="310" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="22" value="«repository»&#xa;VoteRepository" style="swimlane;fontStyle=3;align=center;startSize=40;              fillColor=#fff2cc;strokeColor=#d6b656;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="760" y="585" width="310" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="23" value="" style="line;strokeColor=#d6b656;fillColor=none;" parent="22" vertex="1">
+          <mxGeometry y="40" width="310" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="24" value="+ findByVoterIdAndPosition(id, pos) : Optional&lt;Vote&gt;&#xa;+ findByPosition(pos) : List&lt;Vote&gt;" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="22" vertex="1">
+          <mxGeometry y="48" width="310" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="26" value="«document»&#xa;Voter" style="swimlane;fontStyle=1;align=center;startSize=40;              fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="40" y="790" width="240" height="165" as="geometry" />
+        </mxCell>
+        <mxCell id="27" value="- id : String&#xa;- firstName : String&#xa;- lastName : String&#xa;- email : String&#xa;- matricNumber : String&#xa;- hasVoted : boolean" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="26" vertex="1">
+          <mxGeometry y="40" width="240" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="30" value="«document»&#xa;Candidate" style="swimlane;fontStyle=1;align=center;startSize=40;              fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="340" y="790" width="240" height="125" as="geometry" />
+        </mxCell>
+        <mxCell id="31" value="- id : String&#xa;- voterId : String&#xa;- position : Position&#xa;- createdAt : LocalDateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="30" vertex="1">
+          <mxGeometry y="40" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="34" value="«document»&#xa;Vote" style="swimlane;fontStyle=1;align=center;startSize=40;              fillColor=#f8cecc;strokeColor=#b85450;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="640" y="790" width="240" height="145" as="geometry" />
+        </mxCell>
+        <mxCell id="35" value="- id : String&#xa;- voterId : String&#xa;- candidateId : String&#xa;- position : Position&#xa;- timestamp : LocalDateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="34" vertex="1">
+          <mxGeometry x="-5" y="40" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="38" value="«enum»&#xa;Position" style="swimlane;fontStyle=1;align=center;startSize=40;              fillColor=#d5e8d4;strokeColor=#82b366;fontSize=12;" parent="1" vertex="1">
+          <mxGeometry x="940" y="790" width="200" height="105" as="geometry" />
+        </mxCell>
+        <mxCell id="39" value="PRESIDENT&#xa;VICE_PRESIDENT&#xa;GENERAL_SECRETARY" style="text;strokeColor=none;fillColor=none;align=center;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;fontStyle=1;" parent="38" vertex="1">
+          <mxGeometry y="40" width="200" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="42" value="VoterRegistrationRequest" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="40" y="1060" width="240" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="43" value="- firstName : String&#xa;- lastName : String&#xa;- email : String&#xa;- matricNumber : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="42" vertex="1">
+          <mxGeometry y="30" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="46" value="CandidateRegistrationRequest" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="340" y="1060" width="260" height="72" as="geometry" />
+        </mxCell>
+        <mxCell id="47" value="- voterId : String&#xa;- position : Position" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="46" vertex="1">
+          <mxGeometry y="30" width="260" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="50" value="VoteRequest" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="660" y="1060" width="240" height="90" as="geometry" />
+        </mxCell>
+        <mxCell id="51" value="- voterId : String&#xa;- candidateId : String&#xa;- position : Position" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="50" vertex="1">
+          <mxGeometry y="30" width="240" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="54" value="ApiResponse" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="960" y="1060" width="240" height="104" as="geometry" />
+        </mxCell>
+        <mxCell id="55" value="- success : boolean&#xa;- data : Object" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="54" vertex="1">
+          <mxGeometry y="30" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="56" value="" style="line;strokeColor=#666666;fillColor=none;" parent="54" vertex="1">
+          <mxGeometry y="70" width="240" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="57" value="+ ApiResponse(success : boolean, data : Object)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="54" vertex="1">
+          <mxGeometry y="78" width="240" height="24" as="geometry" />
+        </mxCell>
+        <mxCell id="58" value="VoterResponse" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="40" y="1275" width="240" height="152" as="geometry" />
+        </mxCell>
+        <mxCell id="59" value="- id : String&#xa;- firstName : String&#xa;- lastName : String&#xa;- email : String&#xa;- matricNumber : String&#xa;- hasVoted : boolean" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="58" vertex="1">
+          <mxGeometry y="30" width="240" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="62" value="CandidateResponse" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="340" y="1275" width="240" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="63" value="- id : String&#xa;- voterId : String&#xa;- position : String&#xa;- createdAt : LocalDateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="62" vertex="1">
+          <mxGeometry y="30" width="240" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="66" value="VoteResponse" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="640" y="1275" width="240" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="67" value="- id : String&#xa;- voterId : String&#xa;- candidateId : String&#xa;- position : String&#xa;- timestamp : LocalDateTime" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="66" vertex="1">
+          <mxGeometry y="30" width="240" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="70" value="ElectionResultResponse" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="940" y="1275" width="260" height="132" as="geometry" />
+        </mxCell>
+        <mxCell id="71" value="- position : String&#xa;- candidateId : String&#xa;- candidateName : String&#xa;- totalVotes : int&#xa;- winner : String" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="70" vertex="1">
+          <mxGeometry y="30" width="260" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="74" value="ElectionException" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f8cecc;strokeColor=#b85450;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="270" y="1515" width="240" height="82" as="geometry" />
+        </mxCell>
+        <mxCell id="75" value="" style="line;strokeColor=#b85450;fillColor=none;" parent="74" vertex="1">
+          <mxGeometry y="30" width="240" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="76" value="+ ElectionException(message : String)" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="74" vertex="1">
+          <mxGeometry y="38" width="240" height="40" as="geometry" />
+        </mxCell>
+        <mxCell id="78" value="Mapper" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f5f5f5;strokeColor=#666666;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="750" y="1515" width="310" height="112" as="geometry" />
+        </mxCell>
+        <mxCell id="79" value="" style="line;strokeColor=#666666;fillColor=none;" parent="78" vertex="1">
+          <mxGeometry y="30" width="310" height="8" as="geometry" />
+        </mxCell>
+        <mxCell id="80" value="+ toVoterResponse(voter : Voter) : VoterResponse&#xa;+ toCandidateResponse(c : Candidate) : CandidateResponse&#xa;+ toVoteResponse(vote : Vote) : VoteResponse" style="text;strokeColor=none;fillColor=none;align=left;verticalAlign=top;              spacingLeft=6;spacingRight=4;overflow=hidden;fontSize=11;" parent="78" vertex="1">
+          <mxGeometry y="38" width="310" height="68" as="geometry" />
+        </mxCell>
+        <mxCell id="82" value="DuplicateVoterException" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f8cecc;strokeColor=#b85450;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="-40" y="1765" width="240" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="86" value="CandidateAlreadyExistsException" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f8cecc;strokeColor=#b85450;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="260" y="1760" width="280" height="62" as="geometry" />
+        </mxCell>
+        <mxCell id="90" value="VoteAlreadyCastException" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f8cecc;strokeColor=#b85450;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="580" y="1765" width="260" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="94" value="InvalidVoteException" style="swimlane;fontStyle=1;align=center;startSize=30;              fillColor=#f8cecc;strokeColor=#b85450;fontColor=#333333;fontSize=11;" parent="1" vertex="1">
+          <mxGeometry x="900" y="1750" width="240" height="52" as="geometry" />
+        </mxCell>
+        <mxCell id="200" value="«injects»" style="dashed=1;endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;              fontSize=10;fontStyle=2;" parent="1" source="2" target="6" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="201" value="«implements»" style="dashed=1;endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;              fontSize=10;fontStyle=2;" parent="1" source="10" target="6" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="202" value="@Autowired" style="dashed=1;endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;              fontSize=10;fontStyle=2;" parent="1" source="10" target="14" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="203" value="@Autowired" style="dashed=1;endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;              fontSize=10;fontStyle=2;" parent="1" source="10" target="18" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="204" value="@Autowired" style="dashed=1;endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;              fontSize=10;fontStyle=2;" parent="1" source="10" target="22" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="205" value="" style="endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="14" target="26" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="206" value="" style="endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="18" target="30" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="207" value="" style="endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="22" target="34" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="208" value="position" style="endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;              fontSize=10;fontStyle=2;" parent="1" source="30" target="38" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="209" value="position" style="endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;              fontSize=10;fontStyle=2;" parent="1" source="34" target="38" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="210" value="" style="endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="82" target="74" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="212" value="" style="endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="90" target="74" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="213" value="" style="endArrow=block;endFill=0;edgeStyle=orthogonalEdgeStyle;fontSize=10;" parent="1" source="94" target="74" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

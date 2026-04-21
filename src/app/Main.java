@@ -2,12 +2,15 @@ package app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.data.mongodb.config.EnableMongoAuditing;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"controllers", "data", "dtos", "exceptions", "services", "utils"})
+@ComponentScan(basePackages = {"app", "controllers", "data", "dtos", "exceptions", "services", "utils"})
 @EnableMongoRepositories(basePackages = "data.repositories")
 @EnableMongoAuditing
 public class Main {

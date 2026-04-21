@@ -9,9 +9,10 @@ import java.util.List;
 public class ElectionResultResponse {
     private Position position;
     private int totalVotesCast;
-    private String winnerId;
     private String winnerName;
     private long winnerVoteCount;
+    private boolean tied;
+    private List<CandidateResult> winners;
     private List<CandidateResult> breakdown;
 
     @Data

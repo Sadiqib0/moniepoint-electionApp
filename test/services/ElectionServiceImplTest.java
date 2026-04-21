@@ -4,11 +4,14 @@ import data.models.Position;
 import data.repositories.CandidateRepository;
 import data.repositories.VoteRepository;
 import data.repositories.VoterRepository;
+import data.repositories.ElectionRepository;
 import dtos.requests.CandidateRegistrationRequest;
+import dtos.requests.LoginRequest;
 import dtos.requests.VoteRequest;
 import dtos.requests.VoterRegistrationRequest;
 import dtos.responses.CandidateResponse;
 import dtos.responses.ElectionResultResponse;
+import dtos.responses.LoginResponse;
 import dtos.responses.VoterResponse;
 import exceptions.InvalidLoginDetailsException;
 import exceptions.VoterNotLoggedInException;
@@ -36,14 +39,26 @@ public class ElectionServiceImplTest {
     @Autowired
     private VoteRepository voteRepository;
 
+    @Autowired
+    private ElectionRepository electionRepository;
+
     private VoterRegistrationRequest voterRequest;
     private VoterRegistrationRequest voterRequest2;
+
+    private String login(String email, String password) {
+        LoginRequest request = new LoginRequest();
+        request.setEmail(email);
+        request.setPassword(password);
+        return electionService.login(request).getToken();
+    }
 
     @BeforeEach
     public void setUp() {
         voteRepository.deleteAll();
         candidateRepository.deleteAll();
         voterRepository.deleteAll();
+        electionRepository.deleteAll();
+        electionService.startElection();
 
         voterRequest = new VoterRegistrationRequest();
         voterRequest.setFirstName("Sadiq");
@@ -187,7 +202,7 @@ public class ElectionServiceImplTest {
     }
     @Test
     public void getAllVoters_emptyList_countIsZeroTest() {
-        List<VoterResponse> voters = electionService.getAllVoters();
+        List<VoterResponse> voters = electionService.getAllVoters(0, 20);
         assertEquals(0, voters.size());
     }
 
@@ -195,7 +210,7 @@ public class ElectionServiceImplTest {
     public void registerTwoVoters_getAllVoters_returnsTwoTest() {
         electionService.registerVoter(voterRequest);
         electionService.registerVoter(voterRequest2);
-        List<VoterResponse> voters = electionService.getAllVoters();
+        List<VoterResponse> voters = electionService.getAllVoters(0, 20);
         assertEquals(2, voters.size());
     }
     @Test
@@ -210,12 +225,13 @@ public class ElectionServiceImplTest {
 
         assertEquals(0L, voteRepository.count());
 
-        electionService.login("aliyu@moniepoint.edu", "password456");
+        String token = login("aliyu@moniepoint.edu", "password456");
 
         VoteRequest voteRequest = new VoteRequest();
         voteRequest.setVoterId(voter2.getId());
         voteRequest.setCandidateId(candidate.getId());
         voteRequest.setPosition(Position.PRESIDENT);
+        voteRequest.setToken(token);
 
         electionService.castVote(voteRequest);
         assertEquals(1L, voteRepository.count());
@@ -231,12 +247,13 @@ public class ElectionServiceImplTest {
         candidateRequest.setPosition(Position.PRESIDENT);
         CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
 
-        electionService.login("aliyu@moniepoint.edu", "password456");
+        String token = login("aliyu@moniepoint.edu", "password456");
 
         VoteRequest voteRequest = new VoteRequest();
         voteRequest.setVoterId(voter2.getId());
         voteRequest.setCandidateId(candidate.getId());
         voteRequest.setPosition(Position.PRESIDENT);
+        voteRequest.setToken(token);
 
         electionService.castVote(voteRequest);
         assertThrows(VoteAlreadyCastException.class, () -> electionService.castVote(voteRequest));
@@ -272,12 +289,13 @@ public class ElectionServiceImplTest {
         candidateRequest.setPosition(Position.PRESIDENT);
         CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
 
-        electionService.login("aliyu@moniepoint.edu", "password456");
+        String token = login("aliyu@moniepoint.edu", "password456");
 
         VoteRequest voteRequest = new VoteRequest();
         voteRequest.setVoterId(voter2.getId());
         voteRequest.setCandidateId(candidate.getId());
         voteRequest.setPosition(Position.PRESIDENT);
+        voteRequest.setToken(token);
 
         electionService.castVote(voteRequest);
         assertEquals(1L, voteRepository.count());
@@ -307,21 +325,21 @@ public class ElectionServiceImplTest {
     @Test
     public void registerVoter_loginVoter_voterIsLoggedInTest() {
         electionService.registerVoter(voterRequest);
-        electionService.login("sadiq@moniepoint.edu", "password123");
+        login("sadiq@moniepoint.edu", "password123");
         assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
     }
 
     @Test
     public void loginUnregisteredVoter_throwsInvalidLoginDetailsExceptionTest() {
         assertThrows(InvalidLoginDetailsException.class,
-                () -> electionService.login("unknown@moniepoint.edu", "password123"));
+                () -> login("unknown@moniepoint.edu", "password123"));
     }
 
     @Test
     public void loginWithWrongPassword_throwsInvalidLoginDetailsExceptionTest() {
         electionService.registerVoter(voterRequest);
         assertThrows(InvalidLoginDetailsException.class,
-                () -> electionService.login("sadiq@moniepoint.edu", "wrongpassword"));
+                () -> login("sadiq@moniepoint.edu", "wrongpassword"));
         assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
     }
 
@@ -329,7 +347,7 @@ public class ElectionServiceImplTest {
     public void loginWithWrongPassword_voterRemainsLoggedOutTest() {
         electionService.registerVoter(voterRequest);
         assertThrows(InvalidLoginDetailsException.class,
-                () -> electionService.login("sadiq@moniepoint.edu", "wrongpassword"));
+                () -> login("sadiq@moniepoint.edu", "wrongpassword"));
         assertEquals(1L, voterRepository.count());
         assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
     }
@@ -338,8 +356,8 @@ public class ElectionServiceImplTest {
     public void loginTwoVoters_bothAreLoggedInTest() {
         electionService.registerVoter(voterRequest);
         electionService.registerVoter(voterRequest2);
-        electionService.login("sadiq@moniepoint.edu", "password123");
-        electionService.login("aliyu@moniepoint.edu", "password456");
+        login("sadiq@moniepoint.edu", "password123");
+        login("aliyu@moniepoint.edu", "password456");
         assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
         assertTrue(voterRepository.findByEmail("aliyu@moniepoint.edu").get().isLoggedIn());
     }
@@ -347,7 +365,7 @@ public class ElectionServiceImplTest {
     @Test
     public void registerVoter_loginVoter_logoutVoter_voterIsLoggedOutTest() {
         electionService.registerVoter(voterRequest);
-        electionService.login("sadiq@moniepoint.edu", "password123");
+        login("sadiq@moniepoint.edu", "password123");
         assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
         electionService.logout("sadiq@moniepoint.edu");
         assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
@@ -367,10 +385,170 @@ public class ElectionServiceImplTest {
     @Test
     public void loginVoter_logoutVoter_loginAgain_voterIsLoggedInTest() {
         electionService.registerVoter(voterRequest);
-        electionService.login("sadiq@moniepoint.edu", "password123");
+        login("sadiq@moniepoint.edu", "password123");
         electionService.logout("sadiq@moniepoint.edu");
         assertFalse(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
-        electionService.login("sadiq@moniepoint.edu", "password123");
+        login("sadiq@moniepoint.edu", "password123");
         assertTrue(voterRepository.findByEmail("sadiq@moniepoint.edu").get().isLoggedIn());
+    }
+
+    @Test
+    public void registerVoter_passwordIsHashedInDatabase_notStoredAsPlaintextTest() {
+        electionService.registerVoter(voterRequest);
+        String storedPassword = voterRepository.findByEmail("sadiq@moniepoint.edu").get().getPassword();
+        assertNotEquals("password123", storedPassword);
+        assertTrue(storedPassword.startsWith("$2a$"));
+    }
+
+    @Test
+    public void getAllVoters_withPagination_returnsPagedResultsTest() {
+        electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest2);
+
+        List<VoterResponse> page0 = electionService.getAllVoters(0, 1);
+        List<VoterResponse> page1 = electionService.getAllVoters(1, 1);
+
+        assertEquals(1, page0.size());
+        assertEquals(1, page1.size());
+        assertNotEquals(page0.get(0).getId(), page1.get(0).getId());
+    }
+
+    @Test
+    public void getAllVoters_pageSizeLargerThanTotal_returnsAllTest() {
+        electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest2);
+
+        List<VoterResponse> result = electionService.getAllVoters(0, 100);
+        assertEquals(2, result.size());
+    }
+
+    @Test
+    public void getAllVoters_secondPageBeyondData_returnsEmptyListTest() {
+        electionService.registerVoter(voterRequest);
+
+        List<VoterResponse> result = electionService.getAllVoters(1, 10);
+        assertEquals(0, result.size());
+    }
+
+    @Test
+    public void login_returnsNonNullTokenTest() {
+        electionService.registerVoter(voterRequest);
+        String token = login("sadiq@moniepoint.edu", "password123");
+        assertNotNull(token);
+        assertFalse(token.isBlank());
+    }
+
+    @Test
+    public void login_tokenStoredOnVoterInDatabaseTest() {
+        electionService.registerVoter(voterRequest);
+        String token = login("sadiq@moniepoint.edu", "password123");
+        String storedToken = voterRepository.findByEmail("sadiq@moniepoint.edu").get().getToken();
+        assertEquals(token, storedToken);
+    }
+
+    @Test
+    public void logout_clearsTokenFromDatabaseTest() {
+        electionService.registerVoter(voterRequest);
+        login("sadiq@moniepoint.edu", "password123");
+        electionService.logout("sadiq@moniepoint.edu");
+        assertNull(voterRepository.findByEmail("sadiq@moniepoint.edu").get().getToken());
+    }
+
+    @Test
+    public void loginAgain_generatesNewTokenTest() {
+        electionService.registerVoter(voterRequest);
+        String firstToken = login("sadiq@moniepoint.edu", "password123");
+        electionService.logout("sadiq@moniepoint.edu");
+        String secondToken = login("sadiq@moniepoint.edu", "password123");
+        assertNotEquals(firstToken, secondToken);
+    }
+
+    @Test
+    public void castVoteWithWrongToken_throwsInvalidLoginDetailsExceptionTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        login("aliyu@moniepoint.edu", "password456");
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+        voteRequest.setToken("wrong-token");
+
+        assertThrows(InvalidLoginDetailsException.class, () -> electionService.castVote(voteRequest));
+        assertEquals(0L, voteRepository.count());
+    }
+
+    @Test
+    public void castVoteWithNullToken_throwsInvalidLoginDetailsExceptionTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        login("aliyu@moniepoint.edu", "password456");
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+        voteRequest.setToken(null);
+
+        assertThrows(InvalidLoginDetailsException.class, () -> electionService.castVote(voteRequest));
+        assertEquals(0L, voteRepository.count());
+    }
+
+    @Test
+    public void castVoteWithCorrectToken_successTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        String token = login("aliyu@moniepoint.edu", "password456");
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+        voteRequest.setToken(token);
+
+        electionService.castVote(voteRequest);
+        assertEquals(1L, voteRepository.count());
+    }
+
+    @Test
+    public void loginTwice_oldTokenNoLongerWorksTest() {
+        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
+
+        CandidateRegistrationRequest candidateRequest = new CandidateRegistrationRequest();
+        candidateRequest.setVoterId(voter1.getId());
+        candidateRequest.setPosition(Position.PRESIDENT);
+        CandidateResponse candidate = electionService.registerCandidate(candidateRequest);
+
+        String oldToken = login("aliyu@moniepoint.edu", "password456");
+        electionService.logout("aliyu@moniepoint.edu");
+        login("aliyu@moniepoint.edu", "password456");
+
+        VoteRequest voteRequest = new VoteRequest();
+        voteRequest.setVoterId(voter2.getId());
+        voteRequest.setCandidateId(candidate.getId());
+        voteRequest.setPosition(Position.PRESIDENT);
+        voteRequest.setToken(oldToken);
+
+        assertThrows(InvalidLoginDetailsException.class, () -> electionService.castVote(voteRequest));
     }
 }

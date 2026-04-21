@@ -6,5 +6,6 @@ import lombok.Data;
 public class LoginResponse {
     private String id;
     private String email;
-    private boolean isLoggedIn;
+    private boolean loggedIn;
+    private String token;
 }

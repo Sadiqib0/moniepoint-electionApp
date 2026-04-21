@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class LogoutResponse {
     private String email;
-    private boolean isLoggedIn;
+    private boolean loggedIn;
     private String message;
 }

@@ -1,0 +1,7 @@
+target/
+.idea/
+*.class
+*.iml
+*.eml
+*.userlibraries
+.DS_Store
