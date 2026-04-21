@@ -25,6 +25,7 @@ public class Voter {
     private String matricNumber;
     private String password;
     private boolean loggedIn;
+    private String token;
     private Set<Position> votedPositions = new HashSet<>();
     @CreatedDate
     private LocalDateTime registeredAt;
