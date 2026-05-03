@@ -1,23 +1,21 @@
 package controllers;
 
-import data.models.Position;
+import dtos.requests.AdminLoginRequest;
+import dtos.requests.AdminNominateRequest;
+import dtos.requests.AdminRegistrationRequest;
 import dtos.requests.CandidateRegistrationRequest;
+import dtos.requests.CreateElectionRequest;
 import dtos.requests.LoginRequest;
 import dtos.requests.VoteRequest;
 import dtos.requests.VoterRegistrationRequest;
 import jakarta.validation.Valid;
 import dtos.responses.ApiResponse;
-import dtos.responses.HealthResponse;
 import exceptions.ElectionException;
-import org.bson.Document;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import services.ElectionService;
-
-import java.time.LocalDateTime;
 
 @RestController
 public class ElectionController {
@@ -26,12 +24,65 @@ public class ElectionController {
     private ElectionService electionService;
 
     @Autowired
-    private MongoTemplate mongoTemplate;
+    private services.AdminService adminService;
+
+    // ── Admin endpoints ────────────────────────────────────────────────────────
+
+    @PostMapping("/admin/register")
+    public ResponseEntity<?> registerAdmin(@Valid @RequestBody AdminRegistrationRequest request) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, adminService.register(request)), HttpStatus.CREATED);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/admin/login")
+    public ResponseEntity<?> loginAdmin(@Valid @RequestBody AdminLoginRequest request) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, adminService.login(request)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    @PatchMapping("/admin/logout")
+    public ResponseEntity<?> logoutAdmin(@RequestHeader("X-Admin-Token") String token) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, adminService.logout(token)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.UNAUTHORIZED);
+        }
+    }
+
+    // ── Election management (admin only) ──────────────────────────────────────
+
+    @PostMapping("/election")
+    public ResponseEntity<?> createElection(
+            @Valid @RequestBody CreateElectionRequest request,
+            @RequestHeader("X-Admin-Token") String adminToken) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.createElection(request, adminToken)), HttpStatus.CREATED);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
 
     @PostMapping("/voter")
     public ResponseEntity<?> registerVoter(@Valid @RequestBody VoterRegistrationRequest request) {
         try {
             return new ResponseEntity<>(new ApiResponse(true, electionService.registerVoter(request)), HttpStatus.CREATED);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/admin/candidate")
+    public ResponseEntity<?> nominateCandidate(
+            @Valid @RequestBody AdminNominateRequest request,
+            @RequestHeader("X-Admin-Token") String adminToken) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.nominateCandidate(request, adminToken)), HttpStatus.CREATED);
         } catch (ElectionException e) {
             return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
         }
@@ -65,7 +116,7 @@ public class ElectionController {
     }
 
     @GetMapping("/results/{position}")
-    public ResponseEntity<?> getResults(@PathVariable Position position) {
+    public ResponseEntity<?> getResults(@PathVariable String position) {
         try {
             return new ResponseEntity<>(new ApiResponse(true, electionService.getResults(position)), HttpStatus.OK);
         } catch (ElectionException e) {
@@ -91,28 +142,8 @@ public class ElectionController {
         }
     }
 
-    @GetMapping("/voter/{id}")
-    public ResponseEntity<?> getVoter(@PathVariable String id) {
-        try {
-            return new ResponseEntity<>(new ApiResponse(true, electionService.getVoter(id)), HttpStatus.OK);
-        } catch (ElectionException e) {
-            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @GetMapping("/voters")
-    public ResponseEntity<?> getAllVoters(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-        try {
-            return new ResponseEntity<>(new ApiResponse(true, electionService.getAllVoters(page, size)), HttpStatus.OK);
-        } catch (ElectionException e) {
-            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
-    }
-
     @GetMapping("/candidates/{position}")
-    public ResponseEntity<?> getAllCandidates(@PathVariable Position position) {
+    public ResponseEntity<?> getAllCandidates(@PathVariable String position) {
         try {
             return new ResponseEntity<>(new ApiResponse(true, electionService.getAllCandidates(position)), HttpStatus.OK);
         } catch (ElectionException e) {
@@ -121,18 +152,27 @@ public class ElectionController {
     }
 
     @PostMapping("/election/start")
-    public ResponseEntity<?> startElection() {
+    public ResponseEntity<?> startElection(@RequestHeader("X-Admin-Token") String adminToken) {
         try {
-            return new ResponseEntity<>(new ApiResponse(true, electionService.startElection()), HttpStatus.OK);
+            return new ResponseEntity<>(new ApiResponse(true, electionService.startElection(adminToken)), HttpStatus.OK);
         } catch (ElectionException e) {
             return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }
 
     @PostMapping("/election/end")
-    public ResponseEntity<?> endElection() {
+    public ResponseEntity<?> endElection(@RequestHeader("X-Admin-Token") String adminToken) {
         try {
-            return new ResponseEntity<>(new ApiResponse(true, electionService.endElection()), HttpStatus.OK);
+            return new ResponseEntity<>(new ApiResponse(true, electionService.endElection(adminToken)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/election/positions")
+    public ResponseEntity<?> getElectionPositions() {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.getElectionPositions()), HttpStatus.OK);
         } catch (ElectionException e) {
             return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
         }
@@ -167,13 +207,4 @@ public class ElectionController {
         }
     }
 
-    @GetMapping("/health")
-    public ResponseEntity<?> health() {
-        try {
-            mongoTemplate.getDb().runCommand(new Document("ping", 1));
-            return ResponseEntity.ok(new ApiResponse(true, new HealthResponse("UP", true, LocalDateTime.now())));
-        } catch (Exception e) {
-            return ResponseEntity.ok(new ApiResponse(false, new HealthResponse("DOWN", false, LocalDateTime.now())));
-        }
-    }
 }

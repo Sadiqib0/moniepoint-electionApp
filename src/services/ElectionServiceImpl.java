@@ -2,6 +2,9 @@ package services;
 
 import data.models.*;
 import data.repositories.*;
+import dtos.requests.AdminNominateRequest;
+import dtos.requests.CreateElectionRequest;
+import exceptions.UnauthorizedException;
 import dtos.requests.LoginRequest;
 import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.VoterRegistrationRequest;
@@ -13,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.data.mongodb.core.aggregation.Aggregation;
 import org.springframework.data.mongodb.core.aggregation.AggregationResults;
@@ -45,10 +50,33 @@ public class ElectionServiceImpl implements ElectionService {
     private AuditLogRepository auditLogRepository;
 
     @Autowired
+    private AdminRepository adminRepository;
+
+    @Autowired
     private MongoTemplate mongoTemplate;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private static final String ELECTION_ID = "ELECTION";
+
+    @Override
+    public String createElection(CreateElectionRequest request, String adminToken) {
+        validateAdminToken(adminToken);
+        Optional<Election> existing = electionRepository.findById(ELECTION_ID);
+        if (existing.isPresent() && existing.get().getStatus() == ElectionStatus.ONGOING)
+            throw new ElectionException("An election is currently ongoing. End it before creating a new one.");
+        if (existing.isPresent()) {
+            electionRepository.deleteById(ELECTION_ID);
+            candidateRepository.deleteAll();
+            voteRepository.deleteAll();
+            mongoTemplate.updateMulti(new Query(), new Update().set("votedPositions", new HashSet<>()), Voter.class);
+        }
+        Election election = new Election();
+        election.setId(ELECTION_ID);
+        election.setName(request.getName());
+        election.setPositions(request.getPositions());
+        electionRepository.save(election);
+        return "Election '" + request.getName() + "' created with positions: " + String.join(", ", request.getPositions());
+    }
 
     @Override
     public VoterResponse registerVoter(VoterRegistrationRequest request) {
@@ -64,19 +92,61 @@ public class ElectionServiceImpl implements ElectionService {
     }
 
     @Override
-    public CandidateResponse registerCandidate(CandidateRegistrationRequest request) {
-        Optional<Voter> optionalVoter = voterRepository.findById(request.getVoterId());
+    public CandidateResponse nominateCandidate(AdminNominateRequest request, String adminToken) {
+        validateAdminToken(adminToken);
+        Election election = electionRepository.findById(ELECTION_ID)
+                .orElseThrow(() -> new ElectionException("No election has been created yet."));
+        if (election.getStatus() != ElectionStatus.NOT_STARTED)
+            throw new ElectionException("Nominations are closed. The election has already " +
+                    (election.getStatus() == ElectionStatus.ONGOING ? "started." : "ended."));
+        String position = request.getPosition().toUpperCase();
+        boolean validPosition = election.getPositions().stream()
+                .map(String::toUpperCase)
+                .anyMatch(p -> p.equals(position));
+        if (!validPosition)
+            throw new ElectionException("Position '" + request.getPosition() + "' is not valid. Valid: " +
+                    String.join(", ", election.getPositions()));
+        if (candidateRepository.existsByFullNameIgnoreCaseAndPosition(request.getFullName(), position))
+            throw new ElectionException(request.getFullName() + " is already nominated for " + position + ".");
+        Candidate candidate = new Candidate();
+        candidate.setVoterId("ADMIN_" + UUID.randomUUID());
+        candidate.setPosition(position);
+        candidate.setFullName(request.getFullName());
+        return map(candidateRepository.save(candidate));
+    }
 
+    @Override
+    public CandidateResponse registerCandidate(CandidateRegistrationRequest request) {
+        Election election = electionRepository.findById(ELECTION_ID)
+                .orElseThrow(() -> new ElectionException("No election has been created yet. Create an election first."));
+
+        if (election.getStatus() != ElectionStatus.NOT_STARTED)
+            throw new ElectionException("Nominations are closed. The election has already " +
+                    (election.getStatus() == ElectionStatus.ONGOING ? "started." : "ended."));
+
+        String position = request.getPosition().toUpperCase();
+        boolean validPosition = election.getPositions().stream()
+                .map(String::toUpperCase)
+                .anyMatch(p -> p.equals(position));
+        if (!validPosition)
+            throw new ElectionException("Position '" + request.getPosition() + "' is not valid for this election. " +
+                    "Valid positions: " + String.join(", ", election.getPositions()));
+
+        Optional<Voter> optionalVoter = voterRepository.findById(request.getVoterId());
         if (optionalVoter.isEmpty())
             throw new VoterNotFoundException("Voter with ID " + request.getVoterId() + " not found.");
 
         Voter voter = optionalVoter.get();
 
-        if (candidateRepository.existsByVoterIdAndPosition(request.getVoterId(), request.getPosition()))
-            throw new CandidateAlreadyExistsException(voter.getFirstName() + " " + voter.getLastName() + " is already a candidate for " + request.getPosition() + ".");
+        if (candidateRepository.existsByVoterIdAndPosition(request.getVoterId(), position))
+            throw new CandidateAlreadyExistsException(voter.getFirstName() + " " + voter.getLastName() +
+                    " is already a candidate for " + position + ".");
 
-        Candidate savedCandidate = candidateRepository.save(map(request, voter));
-        return map(savedCandidate);
+        Candidate candidate = new Candidate();
+        candidate.setVoterId(voter.getId());
+        candidate.setPosition(position);
+        candidate.setFullName(voter.getFirstName() + " " + voter.getLastName());
+        return map(candidateRepository.save(candidate));
     }
 
     @Override
@@ -117,39 +187,41 @@ public class ElectionServiceImpl implements ElectionService {
         }
 
         Candidate candidate = optionalCandidate.get();
+        String position = request.getPosition().toUpperCase();
 
-        if (!candidate.getPosition().equals(request.getPosition())) {
-            saveAuditLog(voter.getId(), request.getPosition(), "INVALID_CANDIDATE",
-                    candidate.getFullName() + " is not contesting for " + request.getPosition());
-            throw new InvalidVoteException("Candidate " + candidate.getFullName() + " is not contesting for " + request.getPosition() + ".");
+        if (!candidate.getPosition().equalsIgnoreCase(position)) {
+            saveAuditLog(voter.getId(), position, "INVALID_CANDIDATE",
+                    candidate.getFullName() + " is not contesting for " + position);
+            throw new InvalidVoteException("Candidate " + candidate.getFullName() + " is not contesting for " + position + ".");
         }
 
-        if (voteRepository.existsByVoterIdAndPosition(request.getVoterId(), request.getPosition())) {
-            saveAuditLog(voter.getId(), request.getPosition(), "DUPLICATE_VOTE",
-                    voter.getFirstName() + " already voted for " + request.getPosition());
-            throw new VoteAlreadyCastException(voter.getFirstName() + " " + voter.getLastName() + " has already voted for " + request.getPosition() + ".");
+        if (voteRepository.existsByVoterIdAndPosition(request.getVoterId(), position)) {
+            saveAuditLog(voter.getId(), position, "DUPLICATE_VOTE",
+                    voter.getFirstName() + " already voted for " + position);
+            throw new VoteAlreadyCastException(voter.getFirstName() + " " + voter.getLastName() + " has already voted for " + position + ".");
         }
 
         Vote vote = new Vote();
         vote.setVoterId(request.getVoterId());
         vote.setCandidateId(request.getCandidateId());
-        vote.setPosition(request.getPosition());
+        vote.setPosition(position);
         vote.setReceipt(UUID.randomUUID().toString());
 
         Vote savedVote = voteRepository.save(vote);
-        voter.getVotedPositions().add(request.getPosition());
+        voter.getVotedPositions().add(position);
         voterRepository.save(voter);
 
-        saveAuditLog(voter.getId(), request.getPosition(), "SUCCESS",
+        saveAuditLog(voter.getId(), position, "SUCCESS",
                 voter.getFirstName() + " voted for " + candidate.getFullName());
 
-        return mapToVoteResponse(savedVote, candidate);
+        return mapToVoteResponse(savedVote);
     }
 
     @Override
-    public ElectionResultResponse getResults(Position position) {
+    public ElectionResultResponse getResults(String position) {
+        String normalizedPosition = position.toUpperCase();
         Aggregation aggregation = Aggregation.newAggregation(
-                Aggregation.match(Criteria.where("position").is(position.name())),
+                Aggregation.match(Criteria.where("position").is(normalizedPosition)),
                 Aggregation.group("candidateId").count().as("voteCount"),
                 Aggregation.sort(Sort.Direction.DESC, "voteCount")
         );
@@ -157,7 +229,7 @@ public class ElectionServiceImpl implements ElectionService {
                 aggregation, "vote", Document.class
         );
 
-        List<Candidate> candidates = candidateRepository.findAllByPosition(position);
+        List<Candidate> candidates = candidateRepository.findAllByPosition(normalizedPosition);
         Map<String, String> candidateNames = candidates.stream()
                 .collect(Collectors.toMap(Candidate::getId, Candidate::getFullName));
 
@@ -168,22 +240,18 @@ public class ElectionServiceImpl implements ElectionService {
             long count = ((Number) doc.get("voteCount")).longValue();
             totalVotes += count;
             ElectionResultResponse.CandidateResult result = new ElectionResultResponse.CandidateResult();
-            result.setCandidateId(candidateId);
             result.setCandidateName(candidateNames.getOrDefault(candidateId, "Unknown"));
             result.setVoteCount(count);
             breakdown.add(result);
         }
 
         ElectionResultResponse response = new ElectionResultResponse();
-        response.setPosition(position);
         response.setTotalVotesCast((int) totalVotes);
         response.setBreakdown(breakdown);
 
         if (breakdown.isEmpty()) {
             response.setWinnerName("No votes cast yet");
             response.setTied(false);
-            response.setWinners(new ArrayList<>());
-            response.setWinnerVoteCount(0);
         } else {
             long topCount = breakdown.get(0).getVoteCount();
             List<ElectionResultResponse.CandidateResult> winners = breakdown.stream()
@@ -191,11 +259,9 @@ public class ElectionServiceImpl implements ElectionService {
                     .collect(Collectors.toList());
             boolean tied = winners.size() > 1;
             response.setTied(tied);
-            response.setWinners(winners);
             response.setWinnerName(tied ? "TIE — " + winners.stream()
                     .map(ElectionResultResponse.CandidateResult::getCandidateName)
                     .collect(Collectors.joining(", ")) : winners.get(0).getCandidateName());
-            response.setWinnerVoteCount(topCount);
         }
 
         return response;
@@ -216,7 +282,7 @@ public class ElectionServiceImpl implements ElectionService {
     }
 
     @Override
-    public LogoutResponse logout(String email) {
+    public String logout(String email) {
         Optional<Voter> optionalVoter = voterRepository.findByEmail(email);
         if (optionalVoter.isEmpty())
             throw new InvalidLoginDetailsException("Voter with email " + email + " does not exist.");
@@ -225,37 +291,23 @@ public class ElectionServiceImpl implements ElectionService {
             throw new VoterNotLoggedInException(voter.getFirstName() + " is not currently logged in.");
         voter.setLoggedIn(false);
         voter.setToken(null);
-        Voter savedVoter = voterRepository.save(voter);
-        return mapToLogoutResponse(savedVoter);
+        voterRepository.save(voter);
+        return "Goodbye " + voter.getFirstName() + ". You have been logged out.";
     }
 
     @Override
-    public VoterResponse getVoter(String id) {
-        Optional<Voter> optionalVoter = voterRepository.findById(id);
-        if (optionalVoter.isEmpty())
-            throw new VoterNotFoundException("Voter with ID " + id + " not found.");
-        return map(optionalVoter.get());
-    }
-
-    @Override
-    public List<VoterResponse> getAllVoters(int page, int size) {
-        return voterRepository.findAll(PageRequest.of(page, size))
+    public List<CandidateResponse> getAllCandidates(String position) {
+        return candidateRepository.findAllByPosition(position.toUpperCase())
                 .stream()
                 .map(Mapper::map)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public List<CandidateResponse> getAllCandidates(Position position) {
-        return candidateRepository.findAllByPosition(position)
-                .stream()
-                .map(Mapper::map)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    public String startElection() {
-        Election election = getOrCreateElection();
+    public String startElection(String adminToken) {
+        validateAdminToken(adminToken);
+        Election election = electionRepository.findById(ELECTION_ID)
+                .orElseThrow(() -> new ElectionException("No election has been created yet."));
         if (election.getStatus() == ElectionStatus.ENDED)
             throw new ElectionNotActiveException("Election has already ended and cannot be restarted.");
         election.setStatus(ElectionStatus.ONGOING);
@@ -264,18 +316,76 @@ public class ElectionServiceImpl implements ElectionService {
     }
 
     @Override
-    public String endElection() {
-        Election election = getOrCreateElection();
+    public String endElection(String adminToken) {
+        validateAdminToken(adminToken);
+        Election election = electionRepository.findById(ELECTION_ID)
+                .orElseThrow(() -> new ElectionException("No election has been created yet."));
         if (election.getStatus() != ElectionStatus.ONGOING)
             throw new ElectionNotActiveException("Election is not currently ongoing.");
-        election.setStatus(ElectionStatus.ENDED);
-        electionRepository.save(election);
-        return "Election has ENDED.";
+
+        archiveAndClear(election);
+        return "Election has ended. Results archived and data cleared.";
+    }
+
+    private void archiveAndClear(Election election) {
+        String electionName = election.getName() != null ? election.getName() : "Election";
+
+        for (String position : election.getPositions()) {
+            List<Candidate> candidates = candidateRepository.findAllByPosition(position);
+            Map<String, String> nameMap = candidates.stream()
+                    .collect(Collectors.toMap(Candidate::getId, Candidate::getFullName));
+
+            long totalVotes = voteRepository.countByPosition(position);
+
+            StringBuilder details = new StringBuilder();
+            details.append(electionName).append(" | Position: ").append(position)
+                    .append(" | Total votes: ").append(totalVotes).append(" | Results: ");
+
+            Aggregation agg = Aggregation.newAggregation(
+                    Aggregation.match(Criteria.where("position").is(position)),
+                    Aggregation.group("candidateId").count().as("count"),
+                    Aggregation.sort(Sort.Direction.DESC, "count")
+            );
+            AggregationResults<Document> aggResults = mongoTemplate.aggregate(agg, "vote", Document.class);
+            List<String> breakdown = new ArrayList<>();
+            for (Document doc : aggResults.getMappedResults()) {
+                String candidateId = doc.getString("_id");
+                long count = ((Number) doc.get("count")).longValue();
+                breakdown.add(nameMap.getOrDefault(candidateId, "Unknown") + " (" + count + " votes)");
+            }
+            details.append(breakdown.isEmpty() ? "No votes cast" : String.join(", ", breakdown));
+
+            AuditLog log = new AuditLog();
+            log.setVoterId("SYSTEM");
+            log.setPosition(position);
+            log.setOutcome("ELECTION_ARCHIVED");
+            log.setDetails(details.toString());
+            log.setTimestamp(LocalDateTime.now());
+            auditLogRepository.save(log);
+        }
+
+        mongoTemplate.remove(
+                Query.query(Criteria.where("outcome").ne("ELECTION_ARCHIVED")),
+                AuditLog.class
+        );
+        voteRepository.deleteAll();
+        candidateRepository.deleteAll();
+        mongoTemplate.updateMulti(new Query(), new Update().set("votedPositions", new HashSet<>()), Voter.class);
+        electionRepository.deleteById(ELECTION_ID);
     }
 
     @Override
     public String getElectionStatus() {
-        return getOrCreateElection().getStatus().name();
+        return electionRepository.findById(ELECTION_ID)
+                .map(e -> e.getStatus().name())
+                .orElse("NOT_CREATED");
+    }
+
+    @Override
+    public List<String> getElectionPositions() {
+        return electionRepository.findById(ELECTION_ID)
+                .map(Election::getPositions)
+                .orElse(List.of());
     }
 
     @Override
@@ -285,10 +395,8 @@ public class ElectionServiceImpl implements ElectionService {
             throw new InvalidVoteException("No vote found for receipt: " + receipt);
         Vote vote = optionalVote.get();
         VoteReceiptResponse response = new VoteReceiptResponse();
-        response.setReceipt(receipt);
         response.setPosition(vote.getPosition());
         response.setTimestamp(vote.getTimestamp());
-        response.setMessage("Your vote for " + vote.getPosition() + " has been recorded.");
         return response;
     }
 
@@ -320,16 +428,8 @@ public class ElectionServiceImpl implements ElectionService {
 
     @Override
     public List<AuditLog> getAuditLog(int page, int size) {
-        return auditLogRepository.findAll(PageRequest.of(page, size)).getContent();
-    }
-
-
-    private Election getOrCreateElection() {
-        return electionRepository.findById(ELECTION_ID).orElseGet(() -> {
-            Election election = new Election();
-            election.setId(ELECTION_ID);
-            return electionRepository.save(election);
-        });
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "timestamp"));
+        return auditLogRepository.findAllByOutcome("ELECTION_ARCHIVED", pageRequest).getContent();
     }
 
     private ElectionStatus getCurrentElectionStatus() {
@@ -338,7 +438,15 @@ public class ElectionServiceImpl implements ElectionService {
                 .orElse(ElectionStatus.NOT_STARTED);
     }
 
-    private void saveAuditLog(String voterId, Position position, String outcome, String details) {
+    private void validateAdminToken(String token) {
+        if (token == null || token.isBlank())
+            throw new UnauthorizedException("Admin token is required.");
+        adminRepository.findByToken(token)
+                .filter(Admin::isLoggedIn)
+                .orElseThrow(() -> new UnauthorizedException("Invalid or expired admin token. Please log in."));
+    }
+
+    private void saveAuditLog(String voterId, String position, String outcome, String details) {
         AuditLog log = new AuditLog();
         log.setVoterId(voterId);
         log.setPosition(position);

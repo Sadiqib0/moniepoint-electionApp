@@ -13,7 +13,7 @@ public class AuditLog {
     @Id
     private String id;
     private String voterId;
-    private Position position;
+    private String position;
     private String outcome;
     private String details;
     @CreatedDate

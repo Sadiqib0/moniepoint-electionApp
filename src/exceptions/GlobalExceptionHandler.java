@@ -20,4 +20,9 @@ public class GlobalExceptionHandler {
                 .collect(Collectors.joining(", "));
         return new ResponseEntity<>(new ApiResponse(false, errors), HttpStatus.BAD_REQUEST);
     }
+
+    @ExceptionHandler(UnauthorizedException.class)
+    public ResponseEntity<?> handleUnauthorized(UnauthorizedException ex) {
+        return new ResponseEntity<>(new ApiResponse(false, ex.getMessage()), HttpStatus.UNAUTHORIZED);
+    }
 }

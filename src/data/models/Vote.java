@@ -17,7 +17,7 @@ public class Vote {
     private String id;
     private String voterId;
     private String candidateId;
-    private Position position;
+    private String position;
     @Indexed(unique = true)
     private String receipt;
     @CreatedDate

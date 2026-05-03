@@ -7,9 +7,7 @@ import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 @Data
@@ -26,7 +24,7 @@ public class Voter {
     private String password;
     private boolean loggedIn;
     private String token;
-    private Set<Position> votedPositions = new HashSet<>();
+    private Set<String> votedPositions = new HashSet<>();
     @CreatedDate
     private LocalDateTime registeredAt;
 }

@@ -15,7 +15,7 @@ public class Candidate {
     @Id
     private String id;
     private String voterId;
-    private Position position;
+    private String position;
     private String fullName;
     @CreatedDate
     private LocalDateTime nominatedAt;
