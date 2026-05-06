@@ -4,7 +4,6 @@ import data.models.AuditLog;
 import dtos.requests.CreateElectionRequest;
 import dtos.requests.LoginRequest;
 import dtos.requests.AdminNominateRequest;
-import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.VoteRequest;
 import dtos.requests.VoterRegistrationRequest;
 import dtos.responses.CandidateResponse;
@@ -19,7 +18,6 @@ import java.util.List;
 
 public interface ElectionService {
     VoterResponse registerVoter(VoterRegistrationRequest request);
-    CandidateResponse registerCandidate(CandidateRegistrationRequest request);
     CandidateResponse nominateCandidate(AdminNominateRequest request, String adminToken);
     VoteResponse castVote(VoteRequest request);
     ElectionResultResponse getResults(String position);

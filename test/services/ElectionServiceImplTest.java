@@ -295,37 +295,6 @@ public class ElectionServiceImplTest {
     // ── Voter candidate registration ──────────────────────────────────────────
 
     @Test
-    public void registerCandidate_successTest() {
-        VoterResponse voter = electionService.registerVoter(voterRequest);
-        assertEquals(0L, candidateRepository.count());
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter.getId());
-        req.setPosition("PRESIDENT");
-        electionService.registerCandidate(req);
-        assertEquals(1L, candidateRepository.count());
-    }
-
-    @Test
-    public void registerCandidateWithUnknownVoterId_throwsVoterNotFoundExceptionTest() {
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId("unknown-id");
-        req.setPosition("PRESIDENT");
-        assertThrows(VoterNotFoundException.class, () -> electionService.registerCandidate(req));
-        assertEquals(0L, candidateRepository.count());
-    }
-
-    @Test
-    public void registerSameVoterTwiceForSamePosition_throwsCandidateAlreadyExistsExceptionTest() {
-        VoterResponse voter = electionService.registerVoter(voterRequest);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter.getId());
-        req.setPosition("PRESIDENT");
-        electionService.registerCandidate(req);
-        assertThrows(CandidateAlreadyExistsException.class, () -> electionService.registerCandidate(req));
-        assertEquals(1L, candidateRepository.count());
-    }
-
-    @Test
     public void getAllCandidates_noRegisteredCandidates_emptyListTest() {
         List<CandidateResponse> candidates = electionService.getAllCandidates("PRESIDENT");
         assertEquals(0, candidates.size());
@@ -333,40 +302,36 @@ public class ElectionServiceImplTest {
 
     @Test
     public void registerTwoCandidatesForPresident_getAllCandidates_returnsTwoTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
-        VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req1 = new CandidateRegistrationRequest();
-        req1.setVoterId(voter1.getId());
-        req1.setPosition("PRESIDENT");
-        CandidateRegistrationRequest req2 = new CandidateRegistrationRequest();
-        req2.setVoterId(voter2.getId());
-        req2.setPosition("PRESIDENT");
-        electionService.registerCandidate(req1);
-        electionService.registerCandidate(req2);
+        AdminNominateRequest nominateReq1 = new AdminNominateRequest();
+        nominateReq1.setFullName("Sadiq Ibrahim");
+        nominateReq1.setPosition("PRESIDENT");
+        electionService.nominateCandidate(nominateReq1, adminToken);
+        AdminNominateRequest nominateReq2 = new AdminNominateRequest();
+        nominateReq2.setFullName("Aliyu Usman");
+        nominateReq2.setPosition("PRESIDENT");
+        electionService.nominateCandidate(nominateReq2, adminToken);
         assertEquals(2, electionService.getAllCandidates("PRESIDENT").size());
     }
 
     @Test
     public void registerCandidateForPresident_getAllCandidatesForVP_emptyListTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        electionService.nominateCandidate(nominateReq, adminToken);
         assertEquals(0, electionService.getAllCandidates("VICE_PRESIDENT").size());
     }
 
     @Test
     public void registerSameVoterForDifferentPositions_successTest() {
-        VoterResponse voter = electionService.registerVoter(voterRequest);
-        CandidateRegistrationRequest req1 = new CandidateRegistrationRequest();
-        req1.setVoterId(voter.getId());
-        req1.setPosition("PRESIDENT");
-        CandidateRegistrationRequest req2 = new CandidateRegistrationRequest();
-        req2.setVoterId(voter.getId());
-        req2.setPosition("GENERAL_SECRETARY");
-        electionService.registerCandidate(req1);
-        electionService.registerCandidate(req2);
+        AdminNominateRequest nominateReq1 = new AdminNominateRequest();
+        nominateReq1.setFullName("Sadiq Ibrahim");
+        nominateReq1.setPosition("PRESIDENT");
+        electionService.nominateCandidate(nominateReq1, adminToken);
+        AdminNominateRequest nominateReq2 = new AdminNominateRequest();
+        nominateReq2.setFullName("Sadiq Ibrahim");
+        nominateReq2.setPosition("GENERAL_SECRETARY");
+        electionService.nominateCandidate(nominateReq2, adminToken);
         assertEquals(2L, candidateRepository.count());
     }
 
@@ -476,12 +441,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void castVote_successTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
         VoteRequest voteRequest = new VoteRequest();
@@ -495,12 +460,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void castVoteTwiceForSamePosition_throwsVoteAlreadyCastExceptionTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
         VoteRequest voteRequest = new VoteRequest();
@@ -515,12 +480,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void castVoteWithoutLogin_throwsVoterNotLoggedInExceptionTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         VoteRequest voteRequest = new VoteRequest();
         voteRequest.setVoterId(voter2.getId());
@@ -532,12 +497,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void castVoteWithWrongToken_throwsInvalidLoginDetailsExceptionTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         loginVoter("aliyu@moniepoint.edu", "password456");
         VoteRequest voteRequest = new VoteRequest();
@@ -551,12 +516,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void castVoteWithNullToken_throwsInvalidLoginDetailsExceptionTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         loginVoter("aliyu@moniepoint.edu", "password456");
         VoteRequest voteRequest = new VoteRequest();
@@ -570,12 +535,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void loginTwice_oldTokenNoLongerWorksTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         String oldToken = loginVoter("aliyu@moniepoint.edu", "password456");
         electionService.logout("aliyu@moniepoint.edu");
@@ -592,12 +557,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void verifyVote_successTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
         VoteRequest voteRequest = new VoteRequest();
@@ -627,12 +592,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void getResults_afterVoting_returnsCorrectWinnerTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
         VoteRequest voteRequest = new VoteRequest();
@@ -659,12 +624,12 @@ public class ElectionServiceImplTest {
 
     @Test
     public void getStats_afterOneVoteOutOfTwo_returnsFiftyPercentTurnoutTest() {
-        VoterResponse voter1 = electionService.registerVoter(voterRequest);
+        electionService.registerVoter(voterRequest);
         VoterResponse voter2 = electionService.registerVoter(voterRequest2);
-        CandidateRegistrationRequest req = new CandidateRegistrationRequest();
-        req.setVoterId(voter1.getId());
-        req.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(req);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
         VoteRequest voteRequest = new VoteRequest();

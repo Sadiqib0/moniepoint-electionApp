@@ -3,7 +3,6 @@ package controllers;
 import dtos.requests.AdminLoginRequest;
 import dtos.requests.AdminNominateRequest;
 import dtos.requests.AdminRegistrationRequest;
-import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.CreateElectionRequest;
 import dtos.requests.LoginRequest;
 import dtos.requests.VoteRequest;
@@ -83,15 +82,6 @@ public class ElectionController {
             @RequestHeader("X-Admin-Token") String adminToken) {
         try {
             return new ResponseEntity<>(new ApiResponse(true, electionService.nominateCandidate(request, adminToken)), HttpStatus.CREATED);
-        } catch (ElectionException e) {
-            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    @PostMapping("/candidate")
-    public ResponseEntity<?> registerCandidate(@Valid @RequestBody CandidateRegistrationRequest request) {
-        try {
-            return new ResponseEntity<>(new ApiResponse(true, electionService.registerCandidate(request)), HttpStatus.CREATED);
         } catch (ElectionException e) {
             return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
         }

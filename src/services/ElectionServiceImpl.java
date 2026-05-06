@@ -6,7 +6,6 @@ import dtos.requests.AdminNominateRequest;
 import dtos.requests.CreateElectionRequest;
 import exceptions.UnauthorizedException;
 import dtos.requests.LoginRequest;
-import dtos.requests.CandidateRegistrationRequest;
 import dtos.requests.VoterRegistrationRequest;
 import dtos.requests.VoteRequest;
 import dtos.responses.*;
@@ -112,40 +111,6 @@ public class ElectionServiceImpl implements ElectionService {
         candidate.setVoterId("ADMIN_" + UUID.randomUUID());
         candidate.setPosition(position);
         candidate.setFullName(request.getFullName());
-        return map(candidateRepository.save(candidate));
-    }
-
-    @Override
-    public CandidateResponse registerCandidate(CandidateRegistrationRequest request) {
-        Election election = electionRepository.findById(ELECTION_ID)
-                .orElseThrow(() -> new ElectionException("No election has been created yet. Create an election first."));
-
-        if (election.getStatus() != ElectionStatus.NOT_STARTED)
-            throw new ElectionException("Nominations are closed. The election has already " +
-                    (election.getStatus() == ElectionStatus.ONGOING ? "started." : "ended."));
-
-        String position = request.getPosition().toUpperCase();
-        boolean validPosition = election.getPositions().stream()
-                .map(String::toUpperCase)
-                .anyMatch(p -> p.equals(position));
-        if (!validPosition)
-            throw new ElectionException("Position '" + request.getPosition() + "' is not valid for this election. " +
-                    "Valid positions: " + String.join(", ", election.getPositions()));
-
-        Optional<Voter> optionalVoter = voterRepository.findById(request.getVoterId());
-        if (optionalVoter.isEmpty())
-            throw new VoterNotFoundException("Voter with ID " + request.getVoterId() + " not found.");
-
-        Voter voter = optionalVoter.get();
-
-        if (candidateRepository.existsByVoterIdAndPosition(request.getVoterId(), position))
-            throw new CandidateAlreadyExistsException(voter.getFirstName() + " " + voter.getLastName() +
-                    " is already a candidate for " + position + ".");
-
-        Candidate candidate = new Candidate();
-        candidate.setVoterId(voter.getId());
-        candidate.setPosition(position);
-        candidate.setFullName(voter.getFirstName() + " " + voter.getLastName());
         return map(candidateRepository.save(candidate));
     }
 

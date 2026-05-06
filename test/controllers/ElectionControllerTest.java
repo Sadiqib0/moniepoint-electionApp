@@ -424,48 +424,6 @@ public class ElectionControllerTest {
                 .jsonPath("$.status").isEqualTo(false);
     }
 
-    // ── Voter candidate registration endpoint ─────────────────────────────────
-
-    @Test
-    public void registerCandidate_successTest() {
-        VoterRegistrationRequest voterReq = new VoterRegistrationRequest();
-        voterReq.setFirstName("Sadiq");
-        voterReq.setLastName("Ibrahim");
-        voterReq.setEmail("sadiq@moniepoint.edu");
-        voterReq.setMatricNumber("CSC/21/0001");
-        voterReq.setPassword("password123");
-        VoterResponse voter = electionService.registerVoter(voterReq);
-
-        CandidateRegistrationRequest request = new CandidateRegistrationRequest();
-        request.setVoterId(voter.getId());
-        request.setPosition("PRESIDENT");
-
-        webTestClient.post()
-                .uri("/candidate")
-                .bodyValue(request)
-                .exchange()
-                .expectStatus().isCreated()
-                .expectBody()
-                .jsonPath("$.status").isEqualTo(true)
-                .jsonPath("$.data.fullName").isEqualTo("Sadiq Ibrahim")
-                .jsonPath("$.data.position").isEqualTo("PRESIDENT");
-    }
-
-    @Test
-    public void registerCandidateUnknownVoter_returnsErrorTest() {
-        CandidateRegistrationRequest request = new CandidateRegistrationRequest();
-        request.setVoterId("unknown-id");
-        request.setPosition("PRESIDENT");
-
-        webTestClient.post()
-                .uri("/candidate")
-                .bodyValue(request)
-                .exchange()
-                .expectStatus().isBadRequest()
-                .expectBody()
-                .jsonPath("$.status").isEqualTo(false);
-    }
-
     // ── Login / logout voter endpoints ────────────────────────────────────────
 
     @Test
@@ -533,7 +491,7 @@ public class ElectionControllerTest {
         voterReq1.setFirstName("Sadiq"); voterReq1.setLastName("Ibrahim");
         voterReq1.setEmail("sadiq@moniepoint.edu"); voterReq1.setMatricNumber("CSC/21/0001");
         voterReq1.setPassword("password123");
-        VoterResponse voter1 = electionService.registerVoter(voterReq1);
+        electionService.registerVoter(voterReq1);
 
         VoterRegistrationRequest voterReq2 = new VoterRegistrationRequest();
         voterReq2.setFirstName("Aliyu"); voterReq2.setLastName("Musa");
@@ -541,10 +499,10 @@ public class ElectionControllerTest {
         voterReq2.setPassword("password456");
         VoterResponse voter2 = electionService.registerVoter(voterReq2);
 
-        CandidateRegistrationRequest candidateReq = new CandidateRegistrationRequest();
-        candidateReq.setVoterId(voter1.getId());
-        candidateReq.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(candidateReq);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
 
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
@@ -571,7 +529,7 @@ public class ElectionControllerTest {
         voterReq1.setFirstName("Sadiq"); voterReq1.setLastName("Ibrahim");
         voterReq1.setEmail("sadiq@moniepoint.edu"); voterReq1.setMatricNumber("CSC/21/0001");
         voterReq1.setPassword("password123");
-        VoterResponse voter1 = electionService.registerVoter(voterReq1);
+        electionService.registerVoter(voterReq1);
 
         VoterRegistrationRequest voterReq2 = new VoterRegistrationRequest();
         voterReq2.setFirstName("Aliyu"); voterReq2.setLastName("Musa");
@@ -579,10 +537,10 @@ public class ElectionControllerTest {
         voterReq2.setPassword("password456");
         VoterResponse voter2 = electionService.registerVoter(voterReq2);
 
-        CandidateRegistrationRequest candidateReq = new CandidateRegistrationRequest();
-        candidateReq.setVoterId(voter1.getId());
-        candidateReq.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(candidateReq);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
 
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
@@ -609,7 +567,7 @@ public class ElectionControllerTest {
         voterReq1.setFirstName("Sadiq"); voterReq1.setLastName("Ibrahim");
         voterReq1.setEmail("sadiq@moniepoint.edu"); voterReq1.setMatricNumber("CSC/21/0001");
         voterReq1.setPassword("password123");
-        VoterResponse voter1 = electionService.registerVoter(voterReq1);
+        electionService.registerVoter(voterReq1);
 
         VoterRegistrationRequest voterReq2 = new VoterRegistrationRequest();
         voterReq2.setFirstName("Aliyu"); voterReq2.setLastName("Musa");
@@ -617,10 +575,10 @@ public class ElectionControllerTest {
         voterReq2.setPassword("password456");
         VoterResponse voter2 = electionService.registerVoter(voterReq2);
 
-        CandidateRegistrationRequest candidateReq = new CandidateRegistrationRequest();
-        candidateReq.setVoterId(voter1.getId());
-        candidateReq.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(candidateReq);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
 
         startElection();
         loginVoter("aliyu@moniepoint.edu", "password456");
@@ -648,7 +606,7 @@ public class ElectionControllerTest {
         voterReq1.setFirstName("Sadiq"); voterReq1.setLastName("Ibrahim");
         voterReq1.setEmail("sadiq@moniepoint.edu"); voterReq1.setMatricNumber("CSC/21/0001");
         voterReq1.setPassword("password123");
-        VoterResponse voter1 = electionService.registerVoter(voterReq1);
+        electionService.registerVoter(voterReq1);
 
         VoterRegistrationRequest voterReq2 = new VoterRegistrationRequest();
         voterReq2.setFirstName("Aliyu"); voterReq2.setLastName("Musa");
@@ -656,10 +614,10 @@ public class ElectionControllerTest {
         voterReq2.setPassword("password456");
         VoterResponse voter2 = electionService.registerVoter(voterReq2);
 
-        CandidateRegistrationRequest candidateReq = new CandidateRegistrationRequest();
-        candidateReq.setVoterId(voter1.getId());
-        candidateReq.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(candidateReq);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
 
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
@@ -699,7 +657,7 @@ public class ElectionControllerTest {
         voterReq1.setFirstName("Sadiq"); voterReq1.setLastName("Ibrahim");
         voterReq1.setEmail("sadiq@moniepoint.edu"); voterReq1.setMatricNumber("CSC/21/0001");
         voterReq1.setPassword("password123");
-        VoterResponse voter1 = electionService.registerVoter(voterReq1);
+        electionService.registerVoter(voterReq1);
 
         VoterRegistrationRequest voterReq2 = new VoterRegistrationRequest();
         voterReq2.setFirstName("Aliyu"); voterReq2.setLastName("Musa");
@@ -707,10 +665,10 @@ public class ElectionControllerTest {
         voterReq2.setPassword("password456");
         VoterResponse voter2 = electionService.registerVoter(voterReq2);
 
-        CandidateRegistrationRequest candidateReq = new CandidateRegistrationRequest();
-        candidateReq.setVoterId(voter1.getId());
-        candidateReq.setPosition("PRESIDENT");
-        CandidateResponse candidate = electionService.registerCandidate(candidateReq);
+        AdminNominateRequest nominateReq = new AdminNominateRequest();
+        nominateReq.setFullName("Sadiq Ibrahim");
+        nominateReq.setPosition("PRESIDENT");
+        CandidateResponse candidate = electionService.nominateCandidate(nominateReq, adminToken);
 
         startElection();
         String token = loginVoter("aliyu@moniepoint.edu", "password456");
