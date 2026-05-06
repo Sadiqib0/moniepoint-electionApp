@@ -87,6 +87,17 @@ public class ElectionController {
         }
     }
 
+    @DeleteMapping("/admin/candidate/{id}")
+    public ResponseEntity<?> removeCandidate(
+            @PathVariable String id,
+            @RequestHeader("X-Admin-Token") String adminToken) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.removeCandidate(id, adminToken)), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
     @PostMapping("/vote")
     public ResponseEntity<?> castVote(@Valid @RequestBody VoteRequest request) {
         try {
@@ -163,6 +174,27 @@ public class ElectionController {
     public ResponseEntity<?> getElectionPositions() {
         try {
             return new ResponseEntity<>(new ApiResponse(true, electionService.getElectionPositions()), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/election")
+    public ResponseEntity<?> getElection() {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.getElection()), HttpStatus.OK);
+        } catch (ElectionException e) {
+            return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @GetMapping("/voters")
+    public ResponseEntity<?> getVoters(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size,
+            @RequestHeader("X-Admin-Token") String adminToken) {
+        try {
+            return new ResponseEntity<>(new ApiResponse(true, electionService.getVoters(page, size, adminToken)), HttpStatus.OK);
         } catch (ElectionException e) {
             return new ResponseEntity<>(new ApiResponse(false, e.getMessage()), HttpStatus.BAD_REQUEST);
         }

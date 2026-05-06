@@ -7,6 +7,7 @@ import dtos.requests.AdminNominateRequest;
 import dtos.requests.VoteRequest;
 import dtos.requests.VoterRegistrationRequest;
 import dtos.responses.CandidateResponse;
+import dtos.responses.ElectionResponse;
 import dtos.responses.ElectionResultResponse;
 import dtos.responses.LoginResponse;
 import dtos.responses.StatsResponse;
@@ -30,6 +31,9 @@ public interface ElectionService {
     String endElection(String adminToken);
     String getElectionStatus();
     List<String> getElectionPositions();
+    ElectionResponse getElection();
+    List<VoterResponse> getVoters(int page, int size, String adminToken);
+    String removeCandidate(String id, String adminToken);
     VoteReceiptResponse verifyVote(String receipt);
     StatsResponse getStats();
     List<AuditLog> getAuditLog(int page, int size);

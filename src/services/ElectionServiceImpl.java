@@ -340,6 +340,40 @@ public class ElectionServiceImpl implements ElectionService {
     }
 
     @Override
+    public ElectionResponse getElection() {
+        Election election = electionRepository.findById(ELECTION_ID)
+                .orElseThrow(() -> new ElectionException("No election has been created yet."));
+        ElectionResponse response = new ElectionResponse();
+        response.setName(election.getName());
+        response.setStatus(election.getStatus().name());
+        response.setPositions(election.getPositions());
+        return response;
+    }
+
+    @Override
+    public List<VoterResponse> getVoters(int page, int size, String adminToken) {
+        validateAdminToken(adminToken);
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "firstName"));
+        return voterRepository.findAll(pageRequest).getContent()
+                .stream()
+                .map(Mapper::map)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public String removeCandidate(String id, String adminToken) {
+        validateAdminToken(adminToken);
+        Election election = electionRepository.findById(ELECTION_ID)
+                .orElseThrow(() -> new ElectionException("No election has been created yet."));
+        if (election.getStatus() != ElectionStatus.NOT_STARTED)
+            throw new ElectionException("Candidates can only be removed before the election starts.");
+        if (!candidateRepository.existsById(id))
+            throw new CandidateNotFoundException("Candidate with ID " + id + " not found.");
+        candidateRepository.deleteById(id);
+        return "Candidate removed successfully.";
+    }
+
+    @Override
     public String getElectionStatus() {
         return electionRepository.findById(ELECTION_ID)
                 .map(e -> e.getStatus().name())
